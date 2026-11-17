@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14231d">
+  <meta name="description" content="AKTE 24 – Ein ungelöster Fall. 16 Verdächtige. 24 Hinweise. Eine Wahrheit.">
+  <title>AKTE 24 – Wo ist der Chef?</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="paper-grain" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#start" aria-label="Zur Startseite">AKTE <span>24</span></a>
+    <div class="topbar-right"><span class="status-dot"></span><span>ERMITTLUNG LÄUFT</span></div>
+  </header>
+
+  <main id="start">
+    <section class="hero">
+      <div class="eyebrow">SONDERKOMMISSION · DEZEMBER</div>
+      <h1>Wo ist<br><em>der Chef?</em></h1>
+      <p class="subtitle">Ein ungelöster Fall. 16 Verdächtige. 24 Hinweise. Eine Wahrheit.</p>
+      <div class="case-stamp" aria-label="Vertraulich">VERTRAULICH<span>AKTENZEICHEN 24-12-01</span></div>
+      <p class="intro">Der Chef ist verschwunden. Niemand weiß, wann er zuletzt gesehen wurde. Und je länger du ermittelst, desto weniger scheint an den Aussagen im Team zu stimmen.</p>
+      <a class="primary-button" href="#kalender">ERMITTLUNG AUFNEHMEN <span>↓</span></a>
+    </section>
+
+    <section class="case-note" aria-label="Ermittlungsauftrag">
+      <div class="note-pin"></div>
+      <div class="note-label">DEIN AUFTRAG</div>
+      <p>Du wurdest als unabhängige Ermittlungsperson hinzugezogen. Öffne jeden Tag einen neuen Hinweis, löse das Rätsel und notiere dir den Buchstaben. Am 24. Dezember kannst du alle 24 Buchstaben zusammensetzen und den Fall auflösen.</p>
+      <div class="note-signature">— Ermittlungsleitung</div>
+    </section>
+
+    <section class="calendar-section" id="kalender">
+      <div class="section-heading">
+        <div><div class="eyebrow">BEWEISMITTEL & SPUREN</div><h2>Der Tatort</h2></div>
+        <p>Die Türen werden am jeweiligen Dezembertag freigeschaltet.</p>
+      </div>
+      <div class="building-frame">
+        <div class="building-top"><span>DIENSTGEBÄUDE</span><span>STANDORT: INTERN</span></div>
+        <div id="doors" class="doors-grid" aria-label="24 Türchen"></div>
+        <div class="building-base"><span>AKTE 24</span><span>NICHT UNBEFUGT BETRETEN</span></div>
+      </div>
+      <p class="calendar-hint"><span class="legend unlocked"></span> Freigeschaltet <span class="legend locked"></span> Noch verschlossen <span class="legend done"></span> Erledigt</p>
+    </section>
+
+    <section class="final-section" id="finale">
+      <div class="eyebrow">AKTENABSCHLUSS</div>
+      <h2>Die letzte<br><em>Wahrheit.</em></h2>
+      <p>Wenn du alle 24 Hinweise gesammelt hast, gib hier die Buchstaben in der richtigen Reihenfolge ein.</p>
+      <form id="final-form" class="final-form">
+        <label for="final-code">DEIN 24-BUCHSTABEN-CODE</label>
+        <input id="final-code" name="final-code" type="text" maxlength="24" minlength="24" autocomplete="off" placeholder="24 Buchstaben …" required>
+        <button class="primary-button" type="submit">FALL AUFKLÄREN <span>→</span></button>
+      </form>
+      <div id="final-result" class="final-result" aria-live="polite" hidden></div>
+    </section>
+  </main>
+
+  <footer><span>AKTE 24 · SONDERKOMMISSION</span><span>ALLE ANGABEN OHNE GEWÄHR. AUSSER DENEN, DIE WICHTIG SIND.</span></footer>
+  <div id="door-modal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <article class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" type="button" aria-label="Schließen" data-close>×</button>
+      <div class="eyebrow" id="modal-day">BEWEISSTÜCK 01</div>
+      <h2 id="modal-title">Die erste Spur</h2>
+      <div id="modal-story" class="modal-story"></div>
+      <div class="evidence-box"><div class="note-label">RÄTSEL</div><p id="modal-puzzle"></p></div>
+      <form id="puzzle-form" class="puzzle-form">
+        <label for="puzzle-answer">DEINE LÖSUNG</label>
+        <input id="puzzle-answer" type="text" autocomplete="off" placeholder="Lösung eingeben …" required>
+        <button class="primary-button" type="submit">PRÜFEN <span>→</span></button>
+      </form>
+      <div id="puzzle-feedback" class="feedback" aria-live="polite"></div>
+      <div id="letter-reveal" class="letter-reveal" hidden><span>DEIN BUCHSTABE</span><strong id="revealed-letter">A</strong><p>Notiere dir diesen Buchstaben für den 24. Dezember.</p></div>
+    </article>
+  </div>
+  <script src="content.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
