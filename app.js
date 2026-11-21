@@ -1,121 +1,120 @@
 (() => {
-  const $ = (selector) => document.querySelector(selector);
-  const doorsEl = $('#doors');
-  const modal = $('#door-modal');
-  const answerInput = $('#puzzle-answer');
-  const feedback = $('#puzzle-feedback');
-  const reveal = $('#letter-reveal');
+  const data = window.CASE_DATA;
+  const preview = new URLSearchParams(location.search).get('preview') === '1';
+  const storageKey = 'akte24-progress-v2';
+  let progress = {};
+  try { progress = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch (_) { progress = {}; }
   let activeDoor = null;
+  const doorsEl = document.getElementById('doors');
+  const modal = document.getElementById('door-modal');
+  const answerInput = document.getElementById('puzzle-answer');
+  const feedback = document.getElementById('puzzle-feedback');
+  const letterReveal = document.getElementById('letter-reveal');
+  const letterBoard = document.getElementById('letter-board');
 
-  const today = new Date();
-  const currentMonth = today.getMonth(); // 0 = Januar, 11 = Dezember
-  const currentDay = today.getDate();
-  const preview = new URLSearchParams(location.search).has('preview');
-  const isDecember = currentMonth === 11;
-  const unlockedThrough = preview ? 24 : (isDecember ? currentDay : 0);
-  const storageKey = 'akte24-progress-v1';
-  const progress = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  const positions = [];
+  [24, 42, 60, 78].forEach(y => [21, 33, 45, 57, 69, 81].forEach(x => positions.push({x,y})));
+  const normalize = value => String(value ?? '').toLocaleLowerCase('de-DE').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+  const isUnlocked = day => preview || (new Date().getFullYear() > 2026 || (new Date().getFullYear() === 2026 && new Date().getMonth() === 11 && new Date().getDate() >= day));
+  const save = () => { try { localStorage.setItem(storageKey, JSON.stringify(progress)); } catch (_) {} };
 
-  function normalize(value) {
-    return value.toLocaleUpperCase('de-DE').normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^A-Z0-9]/g, '');
-  }
-
-  function saveProgress() {
-    localStorage.setItem(storageKey, JSON.stringify(progress));
+  function renderLetters() {
+    letterBoard.innerHTML = '';
+    data.doors.forEach(item => {
+      const cell = document.createElement('div');
+      cell.className = 'letter-cell' + (progress[item.day] ? '' : ' empty');
+      cell.textContent = progress[item.day] ? item.letter : '·';
+      cell.title = `Türchen ${item.day}`;
+      letterBoard.appendChild(cell);
+    });
+    const solved = data.doors.filter(item => progress[item.day]).length;
+    document.getElementById('progress-label').textContent = `${solved} / 24 Hinweise gelöst`;
   }
 
   function renderDoors() {
-    CASE_CONTENT.doors.forEach((door) => {
+    doorsEl.innerHTML = '';
+    data.doors.forEach((item, index) => {
+      const pos = positions[index];
       const button = document.createElement('button');
-      const unlocked = door.day <= unlockedThrough;
-      const done = Boolean(progress[door.day]);
-      button.className = `door${done ? ' done' : ''}`;
+      const unlocked = isUnlocked(item.day);
       button.type = 'button';
+      button.className = 'door' + (progress[item.day] ? ' done' : '');
+      button.style.left = `${pos.x}%`;
+      button.style.top = `${pos.y}%`;
+      button.textContent = progress[item.day] ? '✓' : String(item.day).padStart(2,'0');
+      button.setAttribute('aria-label', `Türchen ${item.day}${progress[item.day] ? ', gelöst' : unlocked ? ', öffnen' : ', noch verschlossen'}`);
       button.disabled = !unlocked;
-      button.setAttribute('aria-label', `Türchen ${door.day}${done ? ', erledigt' : unlocked ? ', öffnen' : ', noch verschlossen'}`);
-      button.innerHTML = `<span class="door-number">${String(door.day).padStart(2, '0')}</span><span class="door-symbol">${done ? '✦' : unlocked ? '⌑' : '×'}</span><span class="door-label">${done ? 'GESICHERT' : unlocked ? 'ÖFFNEN' : 'VERSCHLOSSEN'}</span>`;
-      if (unlocked) button.addEventListener('click', () => openDoor(door));
+      button.addEventListener('click', () => openDoor(item));
       doorsEl.appendChild(button);
     });
+    renderLetters();
   }
 
-  function openDoor(door) {
-    activeDoor = door;
-    $('#modal-day').textContent = `BEWEISSTÜCK ${String(door.day).padStart(2, '0')} · ${door.day}. DEZEMBER`;
-    $('#modal-title').textContent = door.title;
-    $('#modal-story').textContent = door.story;
-    $('#modal-puzzle').textContent = door.puzzle;
+  function openDoor(item) {
+    activeDoor = item;
+    document.getElementById('modal-day').textContent = `BEWEISSTÜCK ${String(item.day).padStart(2,'0')} · ${String(item.day).padStart(2,'0')}. DEZEMBER`;
+    document.getElementById('modal-title').textContent = item.title;
+    document.getElementById('modal-story').innerHTML = item.story;
+    document.getElementById('modal-puzzle').textContent = item.puzzle;
     answerInput.value = '';
     feedback.textContent = '';
     feedback.className = 'feedback';
-    const solved = Boolean(progress[door.day]);
-    reveal.hidden = !solved;
-    if (solved) $('#revealed-letter').textContent = progress[door.day];
+    letterReveal.hidden = !progress[item.day];
+    document.getElementById('revealed-letter').textContent = item.letter;
     modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
+    modal.setAttribute('aria-hidden','false');
     document.body.style.overflow = 'hidden';
-    if (!solved) setTimeout(() => answerInput.focus(), 100);
+    if (!progress[item.day]) setTimeout(() => answerInput.focus(), 80);
   }
 
   function closeModal() {
     modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('aria-hidden','true');
     document.body.style.overflow = '';
     activeDoor = null;
   }
 
-  modal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', closeModal));
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
+  document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeModal));
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
 
-  $('#puzzle-form').addEventListener('submit', (event) => {
+  document.getElementById('puzzle-form').addEventListener('submit', event => {
     event.preventDefault();
     if (!activeDoor) return;
     if (normalize(answerInput.value) === normalize(activeDoor.answer)) {
-      progress[activeDoor.day] = activeDoor.letter;
-      saveProgress();
-      feedback.textContent = 'Richtig. Ein weiteres Beweisstück ist gesichert.';
-      feedback.className = 'feedback good';
-      $('#revealed-letter').textContent = activeDoor.letter;
-      reveal.hidden = false;
-      renderDoorsRefresh();
+      progress[activeDoor.day] = true;
+      save();
+      feedback.textContent = 'Richtig kombiniert. Ein weiteres Puzzleteil ist gesichert.';
+      feedback.className = 'feedback success';
+      letterReveal.hidden = false;
+      document.getElementById('revealed-letter').textContent = activeDoor.letter;
+      renderDoors();
     } else {
-      feedback.textContent = 'Das stimmt noch nicht. Sieh dir die Hinweise noch einmal genau an.';
-      feedback.className = 'feedback';
+      feedback.textContent = 'Das passt noch nicht zur Akte. Prüfe die Angaben und versuche es erneut.';
+      feedback.className = 'feedback error';
     }
   });
 
-  function renderDoorsRefresh() {
-    doorsEl.innerHTML = '';
-    renderDoors();
-  }
-
-  $('#final-form').addEventListener('submit', (event) => {
+  document.getElementById('final-form').addEventListener('submit', event => {
     event.preventDefault();
-    const entered = normalize($('#final-code').value);
-    const expected = normalize(CASE_CONTENT.finalCode);
-    const result = $('#final-result');
+    const result = document.getElementById('final-result');
+    const solved = data.doors.every(item => progress[item.day]);
     result.hidden = false;
-    if (entered.length !== 24) {
-      result.innerHTML = '<h3>Unvollständige Beweiskette</h3><p>Der Code muss genau 24 Buchstaben enthalten.</p>';
-    } else if (entered === expected) {
-      result.innerHTML = `<h3>${escapeHtml(CASE_CONTENT.finalTitle)}</h3><p>${escapeHtml(CASE_CONTENT.finalText)}</p>`;
+    if (!solved) {
+      result.innerHTML = '<h3>Die Akte ist noch unvollständig.</h3><p>Es fehlen noch Beweisstücke. Löse zuerst alle 24 Türchen.</p>';
+      return;
+    }
+    if (normalize(document.getElementById('final-code').value) === normalize(data.finalCode)) {
+      result.innerHTML = `<h3>${data.finalTitle}</h3><p>${data.finalText}</p>`;
     } else {
-      result.innerHTML = '<h3>Die Akte bleibt offen.</h3><p>Die Buchstaben ergeben noch nicht die richtige Lösung. Prüfe die Reihenfolge deiner 24 Hinweise.</p>';
+      result.innerHTML = '<h3>Die Schlussfolgerung stimmt noch nicht.</h3><p>Ordne die 24 Buchstaben in der Reihenfolge der Türchen und versuche es erneut.</p>';
     }
   });
-
-  function escapeHtml(value) {
-    return String(value).replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
-  }
 
   renderDoors();
-  if (!isDecember && !preview) {
-    const hint = document.createElement('p');
-    hint.className = 'calendar-hint';
-    hint.style.justifyContent = 'center';
-    hint.textContent = 'Vorschau für die Einrichtung: Ergänze ?preview=1 an die Adresse, um alle Türchen zu öffnen.';
-    $('#kalender').appendChild(hint);
+  if (preview) {
+    const notice = document.createElement('div');
+    notice.textContent = 'VORSCHAU-MODUS – alle Türchen sind zum Testen geöffnet.';
+    notice.style.cssText = 'position:sticky;top:0;z-index:25;background:#7b3b37;color:#fff;text-align:center;padding:7px;font:10px DM Mono,monospace;letter-spacing:.08em';
+    document.body.prepend(notice);
   }
 })();
